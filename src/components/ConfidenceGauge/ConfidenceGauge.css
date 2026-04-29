@@ -1,0 +1,57 @@
+.confidence-gauge-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.confidence-gauge-container.small {
+  transform: scale(0.8);
+}
+
+.confidence-gauge-container.large {
+  transform: scale(1);
+}
+
+.confidence-gauge-svg {
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.3));
+}
+
+.confidence-gauge-progress {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.confidence-gauge-text {
+  font-family: monospace;
+}
+
+.confidence-gauge-label {
+  text-align: center;
+}
+
+.confidence-level-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.confidence-level-badge.high {
+  background: #064e3b;
+  color: #10b981;
+  border: 1px solid #10b98140;
+}
+
+.confidence-level-badge.medium {
+  background: #451a03;
+  color: #eab308;
+  border: 1px solid #eab30840;
+}
+
+.confidence-level-badge.low {
+  background: #4c0519;
+  color: #ef4444;
+  border: 1px solid #ef444440;
+}

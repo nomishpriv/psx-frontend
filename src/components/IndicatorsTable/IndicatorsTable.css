@@ -1,0 +1,450 @@
+.indicators-table-container {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  will-change: transform; /* GPU acceleration */
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.table-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #f1f5f9;
+}
+
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.signal-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 6px 16px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: #2a2a3e;
+  color: #f1f5f9;
+}
+
+.filter-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.stock-count {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 16px;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.indicators-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 1600px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.indicators-table th {
+  padding: 12px 8px;
+  text-align: left;
+  color: #64748b;
+  font-weight: 600;
+  border-bottom: 1px solid #2a2a3e;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.indicators-table th:hover {
+  color: #94a3b8;
+}
+
+.indicators-table .section-header {
+  text-align: center;
+  background: #0f172a;
+  color: #60a5fa;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.indicators-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #1e293b;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.table-row-clickable {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.table-row-clickable:hover {
+  background: #1e293b !important;
+}
+
+.symbol-cell {
+  font-weight: 700;
+  color: #f1f5f9 !important;
+}
+
+.price-cell {
+  font-weight: 600;
+  color: #64ffda !important;
+}
+
+/* ============ SIGNAL BADGES ============ */
+.signal-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.signal-buy {
+  background: #052e16;
+  color: #22c55e;
+  border: 1px solid #22c55e40;
+}
+
+.signal-sell {
+  background: #2d0a0a;
+  color: #ef4444;
+  border: 1px solid #ef444440;
+}
+
+.signal-neutral {
+  background: #1c1a07;
+  color: #fbbf24;
+  border: 1px solid #fbbf2440;
+}
+
+.signal-strong-buy {
+  background: #064e3b;
+  color: #10b981;
+  border: 1px solid #10b98160;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.signal-strong-sell {
+  background: #4c0519;
+  color: #f43f5e;
+  border: 1px solid #f43f5e60;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.3);
+}
+
+/* ============ CONFIDENCE SCORE STYLES ============ */
+.confidence-cell {
+  min-width: 100px;
+}
+
+.confidence-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.confidence-bar {
+  height: 6px;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #ef4444, #eab308, #10b981);
+}
+
+.confidence-value {
+  font-weight: 700;
+  font-size: 11px;
+  min-width: 35px;
+}
+
+.confidence-level {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.confidence-high {
+  background: #064e3b;
+  color: #10b981;
+}
+
+.confidence-medium {
+  background: #451a03;
+  color: #eab308;
+}
+
+.confidence-low {
+  background: #4c0519;
+  color: #ef4444;
+}
+
+/* ============ 15-MIN TREND STYLES ============ */
+.trend-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trend-icon {
+  font-size: 14px;
+}
+
+.trend-text {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.trend-strength {
+  font-size: 9px;
+  color: #64748b;
+}
+
+.trend-bullish {
+  color: #10b981;
+}
+
+.trend-slightly-bullish {
+  color: #84cc16;
+}
+
+.trend-bearish {
+  color: #ef4444;
+}
+
+.trend-slightly-bearish {
+  color: #f97316;
+}
+
+.trend-neutral {
+  color: #94a3b8;
+}
+
+/* ============ INDICATOR LABELS ============ */
+.indicator-label {
+  display: block;
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ============ RSI STYLES ============ */
+.rsi-oversold {
+  color: #22c55e !important;
+  font-weight: 600;
+}
+
+.rsi-overbought {
+  color: #ef4444 !important;
+  font-weight: 600;
+}
+
+/* ============ MACD & SIGNAL STYLES ============ */
+.bullish {
+  color: #22c55e !important;
+}
+
+.bearish {
+  color: #ef4444 !important;
+}
+
+/* ============ VOLUME STYLES ============ */
+.high-volume {
+  color: #22c55e !important;
+  font-weight: 600;
+}
+
+.low-volume {
+  color: #ef4444 !important;
+}
+
+/* ============ BOLLINGER BAND STYLES ============ */
+.squeeze-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  background: #6366f1;
+  color: white;
+  font-size: 8px;
+  font-weight: 700;
+  border-radius: 10px;
+  text-transform: uppercase;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ============ TABLE LEGEND ============ */
+.table-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  padding: 16px;
+  background: #0f172a;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.legend-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend-section h4 {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.legend-section span {
+  color: #64748b;
+}
+
+/* ============ VIRTUAL SCROLLING ============ */
+tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 60px;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .table-legend {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .indicators-table {
+    min-width: 1400px;
+  }
+}
+
+/* ============ TOOLTIP / HOVER INFO ============ */
+[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+[data-tooltip]:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+[data-tooltip]:hover:before {
+  opacity: 1;
+}
+
+/* ============ ALTERNATING ROW COLORS ============ */
+.indicators-table tbody tr:nth-child(even) {
+  background: #111827;
+}
+
+.indicators-table tbody tr:nth-child(odd) {
+  background: #0f172a;
+}
+
+/* ============ SORT INDICATORS ============ */
+.sort-indicator {
+  margin-left: 4px;
+  font-size: 10px;
+}
+
+/* ============ LOADING STATE ============ */
+.table-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+/* ============ NO DATA STATE ============ */
+.table-no-data {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+/* ============ SCROLLBAR STYLES ============ */
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

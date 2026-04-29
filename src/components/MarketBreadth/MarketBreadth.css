@@ -1,0 +1,166 @@
+.market-breadth {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.breadth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.breadth-header h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #f1f5f9;
+}
+
+.market-sentiment {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #0f172a;
+}
+
+.breadth-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.stat-card.bullish {
+  border-bottom: 3px solid #10b981;
+}
+
+.stat-card.bearish {
+  border-bottom: 3px solid #ef4444;
+}
+
+.stat-card.neutral {
+  border-bottom: 3px solid #94a3b8;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.stat-percent {
+  font-size: 11px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.stat-card.bullish .stat-percent {
+  color: #10b981;
+}
+
+.stat-card.bearish .stat-percent {
+  color: #ef4444;
+}
+
+.breadth-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.breadth-bar-bullish {
+  background: #10b981;
+  transition: width 0.3s ease;
+}
+
+.breadth-bar-neutral {
+  background: #94a3b8;
+}
+
+.breadth-bar-bearish {
+  background: #ef4444;
+}
+
+.breadth-total {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.breadth-top-movers h4 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.movers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mover-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #0f172a;
+  border-radius: 8px;
+}
+
+.mover-symbol {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.mover-score {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.mover-score.bullish,
+.mover-score.strong_bullish {
+  background: #064e3b;
+  color: #10b981;
+}
+
+.mover-score.bearish,
+.mover-score.strong_bearish {
+  background: #4c0519;
+  color: #ef4444;
+}
+
+.market-breadth-loading,
+.market-breadth-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 30px;
+  background: #1a1a2e;
+  border-radius: 12px;
+  color: #64748b;
+}

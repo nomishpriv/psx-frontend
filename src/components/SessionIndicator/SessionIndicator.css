@@ -1,0 +1,85 @@
+.session-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #1e293b;
+  border-radius: 30px;
+  font-size: 13px;
+}
+
+.session-indicator.session-opening {
+  background: linear-gradient(135deg, #1e293b, #451a03);
+  border: 1px solid #eab308;
+}
+
+.session-indicator.session-morning {
+  background: linear-gradient(135deg, #1e293b, #064e3b);
+  border: 1px solid #10b981;
+}
+
+.session-indicator.session-lunch {
+  background: linear-gradient(135deg, #1e293b, #1e3a5f);
+  border: 1px solid #3b82f6;
+}
+
+.session-indicator.session-afternoon {
+  background: linear-gradient(135deg, #1e293b, #4c0519);
+  border: 1px solid #f97316;
+}
+
+.session-indicator.session-closing {
+  background: linear-gradient(135deg, #1e293b, #4c0519);
+  border: 1px solid #ef4444;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.session-icon {
+  font-size: 20px;
+}
+
+.session-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-name {
+  font-weight: 600;
+  color: #f1f5f9;
+  font-size: 12px;
+}
+
+.session-time {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.session-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.session-status.open {
+  background: #064e3b;
+  color: #10b981;
+}
+
+.session-status.closed {
+  background: #4c0519;
+  color: #64748b;
+}
+
+.session-indicator-loading {
+  padding: 8px 16px;
+}

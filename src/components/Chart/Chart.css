@@ -1,0 +1,378 @@
+.chart-wrapper {
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #f1f5f9;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 500px;
+  position: relative;
+}
+
+.chart-placeholder,
+.chart-error,
+.chart-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 500px;
+  color: #64748b;
+  font-size: 14px;
+  gap: 16px;
+}
+
+.chart-error {
+  color: #ef4444;
+}
+
+.error-icon {
+  font-size: 48px;
+}
+
+.spinner-small {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #2a2a3e;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.retry-btn {
+  padding: 8px 20px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover {
+  background: #2563eb;
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .chart-legend {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .chart-container {
+    height: 400px;
+  }
+}
+.custom-tooltip {
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  padding: 12px;
+  color: #f1f5f9;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip-time {
+  color: #60a5fa;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.custom-tooltip p {
+  margin: 4px 0;
+}
+.chart-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: #1e293b;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summary-item span:first-child {
+  color: #64748b;
+}
+
+.summary-item span:last-child {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.summary-item .positive {
+  color: #22c55e;
+}
+
+.summary-item .negative {
+  color: #ef4444;
+}
+
+/* XAxis label rotation for better 5-min display */
+.recharts-xAxis .recharts-cartesian-axis-tick-value {
+  font-size: 10px !important;
+}
+.signal-summary {
+  display: flex;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #0f172a;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.signal-tag {
+  padding: 4px 12px;
+  background: #1e293b;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.signal-tag.bullish {
+  background: #052e16;
+  color: #22c55e;
+  border: 1px solid #22c55e40;
+}
+
+.signal-tag.bearish {
+  background: #2d0a0a;
+  color: #ef4444;
+  border: 1px solid #ef444440;
+}
+
+.signal-tag.oversold {
+  background: #052e16;
+  color: #4ade80;
+}
+
+.signal-tag.overbought {
+  background: #2d0a0a;
+  color: #f87171;
+}
+
+.signal-tag.neutral {
+  background: #1c1a07;
+  color: #fbbf24;
+}
+
+.macd-panel {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #1a1a2e;
+  border-radius: 8px;
+  border: 1px solid #2a2a3e;
+}
+
+.macd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.macd-header .positive {
+  color: #22c55e;
+}
+
+.macd-header .negative {
+  color: #ef4444;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.timeframe-toggle {
+  display: flex;
+  gap: 4px;
+  background: #1e293b;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.tf-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tf-btn:hover {
+  background: #2a2a3e;
+  color: #f1f5f9;
+}
+
+.tf-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.trend-detection-bar {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  background: #0f172a;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.trend-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 10px;
+  background: #1e293b;
+  border-radius: 6px;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.trend-indicator.active {
+  opacity: 1;
+  background: #1e3a5f;
+}
+
+.trend-indicator span:first-child {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.trend-indicator.active span:first-child {
+  color: #60a5fa;
+}
+
+.trend-label {
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.trend-summary {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.trend-summary.bullish span:first-child {
+  color: #22c55e;
+}
+
+.trend-summary.bearish span:first-child {
+  color: #ef4444;
+}
+
+.trend-reason {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.chart-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #1e293b;
+  border-radius: 8px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.summary-item span:first-child {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.summary-item span:last-child {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.summary-item .positive {
+  color: #22c55e;
+}
+
+.summary-item .negative {
+  color: #ef4444;
+}
