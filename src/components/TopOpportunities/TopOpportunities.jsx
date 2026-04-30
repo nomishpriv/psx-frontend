@@ -108,12 +108,6 @@ const TopOpportunities = ({ onSelectStock, limit = 5 }) => {
                 <span className="rr-value">{opp.riskReward}</span>
               </div>
             )}
-            {/* News Impact Badge */}
-            {opp.newsImpact && (
-              <div className="opportunity-news">
-                📰 {opp.newsImpact}
-              </div>
-            )}
             {opp.tradeRecommendation?.reason && (
               <div className="opportunity-reason">
                 {opp.tradeRecommendation.reason.substring(0, 60)}...
