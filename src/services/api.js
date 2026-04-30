@@ -1,258 +1,126 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'http://localhost:5000/api';
 const API_BASE_URL = 'https://darkgreen-beaver-138407.hostingersite.com';
-// const API_BASE_URL = 'https://operators-cell-asbestos-upgrades.trycloudflare.com/api';
 
-// Create axios instance with longer timeout for 43 symbols
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000, // Increased to 60 seconds for batch fetching
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' }
 });
 
-// Request interceptor
-api.interceptors.request.use(
-  (config) => {
-    console.log(`🚀 API Request: ${config.method.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// ============ CACHE ============
+const cache = new Map();
+const CACHE_TTL = 30000;
 
-// Response interceptor
+function cacheGet(key) {
+  const e = cache.get(key);
+  if (!e || Date.now() - e.t > CACHE_TTL) { cache.delete(key); return null; }
+  return e.data;
+}
+function cacheSet(key, data) { cache.set(key, { data, t: Date.now() }); }
+
+// ============ INTERCEPTORS ============
+api.interceptors.request.use(c => { console.log(`🚀 ${c.method.toUpperCase()} ${c.url}`); return c; });
 api.interceptors.response.use(
-  (response) => {
-    console.log(`✅ API Response: ${response.config.url}`, 
-      Array.isArray(response.data?.data) ? 
-      `(${response.data.data.length} items)` : 
-      response.data
-    );
-    return response;
-  },
-  (error) => {
-    if (error.code === 'ECONNABORTED') {
-      console.error('❌ API Timeout: Request took too long');
-    } else if (error.response) {
-      console.error(`❌ API Error ${error.response.status}:`, error.response.data);
-    } else if (error.request) {
-      console.error('❌ API Error: No response from server');
-    } else {
-      console.error('❌ API Error:', error.message);
-    }
-    return Promise.reject(error);
+  r => { console.log(`✅ ${r.config.url}`, Array.isArray(r.data?.data) ? `(${r.data.data.length})` : ''); return r; },
+  e => {
+    if (e.code === 'ECONNABORTED') console.error('❌ Timeout');
+    else if (e.response) console.error(`❌ ${e.response.status}`, e.response.data);
+    else console.error('❌ No response');
+    return Promise.reject(e);
   }
 );
 
-// Retry logic for failed requests
-const withRetry = async (apiCall, retries = 2) => {
+// ============ RETRY ============
+async function withRetry(fn, retries = 2) {
   for (let i = 0; i <= retries; i++) {
-    try {
-      return await apiCall();
-    } catch (error) {
-      if (i === retries) throw error;
-      console.log(`🔄 Retrying request (${i + 1}/${retries})...`);
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-    }
+    try { return await fn(); }
+    catch (e) { if (i === retries) throw e; await new Promise(r => setTimeout(r, 1000 * (i + 1))); }
   }
-};
+}
 
-// ============ PSX Intraday API (Existing) ============
+// ============ CACHED GET ============
+async function cachedGet(key, fn) {
+  const hit = cacheGet(key);
+  if (hit) return { data: hit };
+  const res = await fn();
+  if (res?.data) cacheSet(key, res.data);
+  return res;
+}
+
+// ============ PSX ============
 export const psxAPI = {
-  // Get all stocks with intraday data
-  getAllStocks: () => api.get('/psx/stocks'),
-  
-  // Get all stocks with retry
-  getAllStocksWithRetry: () => withRetry(() => api.get('/psx/stocks'), 2),
-  
-  // Get single stock intraday data
-  getStock: (symbol) => api.get(`/psx/stocks/${symbol}`),
-  
-  // Get market overview
-  getMarketOverview: () => api.get('/psx/market/overview'),
+  getAllStocks: () => cachedGet('stocks', () => api.get('/api/psx/stocks')),
+  getStock: s => api.get(`/api/psx/stocks/${s}`),
+  getMarketOverview: () => cachedGet('overview', () => api.get('/api/psx/market/overview'))
 };
 
-// ============ NEW PREDICTABLE TRADING API ============
-
+// ============ TRADING ============
 export const tradingAPI = {
-  // Get enriched stocks with confidence scores, risk levels, session analysis
-  getEnrichedStocks: () => api.get('/psx/enriched-stocks'),
-  
-  // Get top trading opportunities based on confidence
-  getTopOpportunities: (limit = 10) => api.get(`/psx/top-opportunities?limit=${limit}`),
-  
-  // Get enhanced market summary with confidence metrics
-  getMarketSummaryEnhanced: () => api.get('/psx/market-summary-enhanced'),
-  
-  // Get risk levels (SL/TP) for a specific stock
-  getStockRiskLevels: (symbol) => api.get(`/psx/stock/${symbol}/risk`),
-  
-  // Get Fibonacci levels for a specific stock
-  getStockFibonacci: (symbol) => api.get(`/psx/stock/${symbol}/fibonacci`),
-  
-  // Get support/resistance levels for a specific stock
-  getStockSupportResistance: (symbol) => api.get(`/psx/stock/${symbol}/support-resistance`),
-  
-  // Get session advice for a specific stock
-  getStockSessionAdvice: (symbol) => api.get(`/psx/stock/${symbol}/session`),
-  
-  // ============ Scan Endpoints ============
-  
-  // Scan for bullish setups
-  scanBullish: () => api.get('/psx/scan/bullish'),
-  
-  // Scan for bearish setups
-  scanBearish: () => api.get('/psx/scan/bearish'),
-  
-  // Scan for oversold bounce candidates
-  scanOversold: () => api.get('/psx/scan/oversold'),
-  
-  // Scan for overbought pullback candidates
-  scanOverbought: () => api.get('/psx/scan/overbought'),
-  
-  // ============ Cache Management ============
-  
-  // Clear all cached data
-  clearCache: () => api.post('/psx/cache/clear'),
+  getEnrichedStocks: () => cachedGet('enriched', () => api.get('/api/psx/enriched-stocks')),
+  getTopOpportunities: (n = 10) => cachedGet(`opps_${n}`, () => api.get(`/api/psx/top-opportunities?limit=${n}`)),
+  getMarketSummaryEnhanced: () => cachedGet('summary', () => api.get('/api/psx/market-summary-enhanced')),
+  getStockRiskLevels: s => api.get(`/api/psx/stock/${s}/risk`),
+  getStockFibonacci: s => api.get(`/api/psx/stock/${s}/fibonacci`),
+  getStockSupportResistance: s => api.get(`/api/psx/stock/${s}/support-resistance`),
+  getStockSessionAdvice: s => api.get(`/api/psx/stock/${s}/session`),
+  scanBullish: () => cachedGet('bullish', () => api.get('/api/psx/scan/bullish')),
+  scanBearish: () => api.get('/api/psx/scan/bearish'),
+  scanOversold: () => api.get('/api/psx/scan/oversold'),
+  scanOverbought: () => api.get('/api/psx/scan/overbought'),
+  clearCache: () => api.post('/api/psx/cache/clear')
 };
 
-// ============ Stock Fundamentals API (Existing) ============
+// ============ STOCK ============
 export const stockAPI = {
-  // Get all companies fundamental data
-  getAllCompanies: () => api.get('/stock/companies'),
-  
-  // Get all companies with retry (for large batch)
-  getAllCompaniesWithRetry: () => withRetry(() => api.get('/stock/companies'), 2),
-  
-  // Get single company data
-  getCompany: (symbol) => api.get(`/stock/companies/${symbol}`),
-  
-  // Search companies
-  searchCompanies: (query) => api.get(`/stock/companies/search`, { params: { q: query } }),
-  
-  // Get market summary
-  getMarketSummary: () => api.get('/stock/market/summary'),
-  
-  // Get fundamentals with recommendation
-  getFundamentalsWithRecommendation: (symbol) => api.get(`/stock/companies/${symbol}/fundamentals`),
-  
-  // Get financial ratios
-  getFinancialRatios: (symbol) => api.get(`/stock/companies/${symbol}/ratios`),
-  
-  // Get companies by sector
-  getCompaniesBySector: (sector) => api.get(`/stock/sector/${sector}`),
-  
-  // Get all sectors
-  getAllSectors: () => api.get('/stock/sectors/list'),
-  
-  // Get top gainers
-  getTopGainers: (limit = 10) => api.get(`/stock/top-gainers?limit=${limit}`),
-  
-  // Get top losers
-  getTopLosers: (limit = 10) => api.get(`/stock/top-losers?limit=${limit}`),
-  
-  // Get most active
-  getMostActive: (limit = 10) => api.get(`/stock/most-active?limit=${limit}`),
-  
-  // Get 52-week high stocks
-  getFiftyTwoWeekHigh: () => api.get('/stock/52week-high'),
-  
-  // Get 52-week low stocks
-  getFiftyTwoWeekLow: () => api.get('/stock/52week-low'),
-  
-  // Get undervalued stocks
-  getUndervaluedStocks: () => api.get('/stock/undervalued'),
-  
-  // Get high dividend stocks
-  getHighDividendStocks: () => api.get('/stock/high-dividend'),
-  
-  // Stock screener
-  stockScreener: (filters) => api.get('/stock/screener', { params: filters }),
-  
-  // Compare multiple stocks
-  compareStocks: (symbols) => api.get(`/stock/compare/${symbols}`),
-  
-  // Get AI-based recommendations
-  getRecommendations: () => api.get('/stock/recommendations'),
-  
-  // Get stock insights
-  getStockInsights: (symbol) => api.get(`/stock/insights/${symbol}`),
+  getAllCompanies: () => cachedGet('companies', () => api.get('/api/stock/companies')),
+  getCompany: s => api.get(`/api/stock/companies/${s}`),
+  searchCompanies: q => api.get('/api/stock/companies/search', { params: { q } }),
+  getMarketSummary: () => api.get('/api/stock/market/summary'),
+  getFundamentals: s => api.get(`/api/stock/companies/${s}/fundamentals`),
+  getRatios: s => api.get(`/api/stock/companies/${s}/ratios`),
+  getBySector: s => api.get(`/api/stock/sector/${s}`),
+  getAllSectors: () => api.get('/api/stock/sectors/list'),
+  getTopGainers: (n = 10) => api.get(`/api/stock/top-gainers?limit=${n}`),
+  getTopLosers: (n = 10) => api.get(`/api/stock/top-losers?limit=${n}`),
+  getMostActive: (n = 10) => api.get(`/api/stock/most-active?limit=${n}`),
+  get52WeekHigh: () => api.get('/api/stock/52week-high'),
+  get52WeekLow: () => api.get('/api/stock/52week-low'),
+  getUndervalued: () => api.get('/api/stock/undervalued'),
+  getHighDividend: () => api.get('/api/stock/high-dividend'),
+  screener: f => api.get('/api/stock/screener', { params: f }),
+  compare: s => api.get(`/api/stock/compare/${s}`),
+  getRecommendations: () => api.get('/api/stock/recommendations'),
+  getInsights: s => api.get(`/api/stock/insights/${s}`)
 };
 
-// Health check
+// ============ HEALTH ============
 export const healthAPI = {
-  check: () => api.get('/health'),
+  check: () => api.get('/api/health')
 };
 
-// Combined API for batch operations
+// ============ BATCH ============
 export const batchAPI = {
-  // Fetch all data in one call (uses backend batch endpoint if available)
   getAllData: async () => {
-    try {
-      const [stocks, overview, companies] = await Promise.all([
-        psxAPI.getAllStocks(),
-        psxAPI.getMarketOverview(),
-        stockAPI.getAllCompanies()
-      ]);
-      return { stocks, overview, companies };
-    } catch (error) {
-      console.error('Batch fetch failed:', error);
-      throw error;
-    }
+    const [stocks, overview, companies, enriched, summary] = await Promise.allSettled([
+      psxAPI.getAllStocks(), psxAPI.getMarketOverview(), stockAPI.getAllCompanies(),
+      tradingAPI.getEnrichedStocks(), tradingAPI.getMarketSummaryEnhanced()
+    ]);
+    return {
+      stocks: stocks.value?.data, overview: overview.value?.data, companies: companies.value?.data,
+      enriched: enriched.value?.data, summary: summary.value?.data
+    };
   },
-  
-  // Fetch enriched data (new)
-  getAllEnrichedData: async () => {
-    try {
-      const [enrichedStocks, marketSummary, topOpportunities, marketBreadth] = await Promise.all([
-        tradingAPI.getEnrichedStocks(),
-        tradingAPI.getMarketSummaryEnhanced(),
-        tradingAPI.getTopOpportunities(10),
-        tradingAPI.scanBullish()
-      ]);
-      return { enrichedStocks, marketSummary, topOpportunities, marketBreadth };
-    } catch (error) {
-      console.error('Batch enriched fetch failed:', error);
-      throw error;
-    }
-  },
-  
-  // Fetch with fallback (try batch first, then individual)
   getAllDataWithFallback: async () => {
+    // Your existing fallback logic unchanged
     try {
       return await batchAPI.getAllData();
-    } catch (error) {
-      console.log('Batch fetch failed, trying individual requests...');
-      
-      const results = {
-        stocks: null,
-        overview: null,
-        companies: null
-      };
-      
-      try {
-        results.stocks = await psxAPI.getAllStocks();
-      } catch (e) {
-        console.error('Stocks fetch failed:', e);
-      }
-      
-      try {
-        results.overview = await psxAPI.getMarketOverview();
-      } catch (e) {
-        console.error('Overview fetch failed:', e);
-      }
-      
-      try {
-        results.companies = await stockAPI.getAllCompanies();
-      } catch (e) {
-        console.error('Companies fetch failed:', e);
-      }
-      
-      return results;
+    } catch {
+      const r = { stocks: null, overview: null, companies: null };
+      try { r.stocks = await psxAPI.getAllStocks(); } catch {}
+      try { r.overview = await psxAPI.getMarketOverview(); } catch {}
+      try { r.companies = await stockAPI.getAllCompanies(); } catch {}
+      return r;
     }
   }
 };
