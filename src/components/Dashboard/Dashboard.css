@@ -490,3 +490,43 @@
 .top-opportunity-card[data-confidence="high"] {
   animation: glow 2s infinite;
 }
+
+.news-bar {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.news-bar-title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #94a3b8;
+}
+
+.news-bar-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.news-bar-scroll::-webkit-scrollbar { display: none; }
+
+.news-chip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.news-chip.positive { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.news-chip.negative { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.news-chip.neutral { background: rgba(234, 179, 8, 0.15); color: #eab308; }

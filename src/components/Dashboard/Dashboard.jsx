@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [sessionInfo, setSessionInfo] = useState(null);
   const [topOpportunities, setTopOpportunities] = useState([]);
   const [marketBreadth, setMarketBreadth] = useState(null);
+  const [generalNews, setGeneralNews] = useState([]);
 
   const fetchingRef = useRef(false);
   const intervalRef = useRef(null);
@@ -41,17 +42,13 @@ const Dashboard = () => {
   }, []);
 
   const fetchData = useCallback(async (isManualRefresh = false) => {
-    if (fetchingRef.current) {
-      console.log('⏳ Fetch already in progress, skipping...');
-      return;
-    }
-
+    if (fetchingRef.current) return;
     fetchingRef.current = true;
 
     try {
       setLoading(true);
 
-      // Fetch enriched data from new endpoint
+      // Fetch enriched data
       let enrichedResponse = null;
       try {
         enrichedResponse = await tradingAPI.getEnrichedStocks();
@@ -59,78 +56,54 @@ const Dashboard = () => {
           setEnrichedStocks(enrichedResponse.data.data);
           setSessionInfo(enrichedResponse.data.session);
         }
-      } catch (enrichedError) {
-        console.warn('Enriched API failed, falling back to legacy:', enrichedError);
-      }
+      } catch (e) { console.warn('Enriched API failed:', e); }
 
       // Fetch market breadth
       try {
-        const breadthResponse = await tradingAPI.scanBullish();
-        if (breadthResponse?.data?.success) {
-          setMarketBreadth(breadthResponse.data);
-        }
-      } catch (breadthError) {
-        console.warn('Failed to fetch market breadth:', breadthError);
-      }
+        const breadth = await tradingAPI.scanBullish();
+        if (breadth?.data?.success) setMarketBreadth(breadth.data);
+      } catch (e) { console.warn('Market breadth failed:', e); }
 
-      // Fallback to legacy data if enriched fails
-      const { stocks: stocksRes, overview: overviewRes, companies: companiesRes } =
-        await batchAPI.getAllDataWithFallback();
+      // Fetch general news
+      try {
+        const newsRes = await tradingAPI.getGeneralNews();
+        if (newsRes?.data?.success) setGeneralNews(newsRes.data.data || []);
+      } catch (e) { console.warn('News fetch failed:', e); }
 
-      if (!stocksRes || !overviewRes || !companiesRes) {
-        throw new Error('Failed to fetch all required data');
-      }
+      // Fallback legacy data
+      const { stocks: stocksRes, overview: overviewRes, companies: companiesRes } = await batchAPI.getAllDataWithFallback();
+      if (!stocksRes || !overviewRes || !companiesRes) throw new Error('Failed to fetch required data');
 
-      // Process company data
+      // Company data map
       const companyDataMap = {};
       if (companiesRes.data.success && companiesRes.data.data) {
-        companiesRes.data.data.forEach(company => {
-          if (company && company.symbol) {
-            companyDataMap[company.symbol] = {
-              equity: company.equity || {},
-              ratios: company.ratios || {},
-              financials: company.financials || { annual: {}, quarterly: {} },
-              payouts: company.payouts || [],
-              stats: company.stats || {},
-              companyName: company.companyName,
-              sector: company.sector,
-            };
-          }
+        companiesRes.data.data.forEach(c => {
+          if (c?.symbol) companyDataMap[c.symbol] = { equity: c.equity || {}, ratios: c.ratios || {}, financials: c.financials || { annual: {}, quarterly: {} }, payouts: c.payouts || [], stats: c.stats || {}, companyName: c.companyName, sector: c.sector };
         });
       }
       setCompanyData(companyDataMap);
 
-      // Process OHLC data
-      const correctOHLCMap = {};
+      // OHLC map
+      const ohlcMap = {};
       if (companiesRes.data.success && companiesRes.data.data) {
-        companiesRes.data.data.forEach(company => {
-          if (company && company.symbol && company.ohlc) {
-            correctOHLCMap[company.symbol] = {
-              open: company.ohlc.open || company.price,
-              high: company.ohlc.high || company.price,
-              low: company.ohlc.low || company.price,
-              close: company.ohlc.close || company.price,
-              dayVolume: company.ohlc.volume || 0,
-            };
-          }
+        companiesRes.data.data.forEach(c => {
+          if (c?.symbol && c.ohlc) ohlcMap[c.symbol] = { open: c.ohlc.open || c.price, high: c.ohlc.high || c.price, low: c.ohlc.low || c.price, close: c.ohlc.close || c.price, dayVolume: c.ohlc.volume || 0 };
         });
       }
 
-      // Merge enriched data with legacy data if available
-      let processedStocks = [];
+      // Merge enriched + legacy
+      let processed = [];
       if (stocksRes.data.success) {
-        processedStocks = stocksRes.data.data.map(stock => {
+        processed = stocksRes.data.data.map(stock => {
           const enriched = enrichedResponse?.data?.data?.find(e => e.symbol === stock.symbol);
-          const correctOHLC = correctOHLCMap[stock.symbol];
-          
+          const ohlc = ohlcMap[stock.symbol];
           return {
-            ...stock,
-            ...enriched,
-            open: correctOHLC?.open ?? stock.open ?? stock.price,
-            high: correctOHLC?.high ?? stock.high ?? stock.price,
-            low: correctOHLC?.low ?? stock.low ?? stock.price,
-            close: correctOHLC?.close ?? stock.close ?? stock.price,
-            dayVolume: correctOHLC?.dayVolume ?? stock.volume,
+            ...stock, ...enriched,
+            open: ohlc?.open ?? stock.open ?? stock.price,
+            high: ohlc?.high ?? stock.high ?? stock.price,
+            low: ohlc?.low ?? stock.low ?? stock.price,
+            close: ohlc?.close ?? stock.close ?? stock.price,
+            dayVolume: ohlc?.dayVolume ?? stock.volume,
             confidence: enriched?.confidence,
             riskLevels: enriched?.riskLevels,
             tradeRecommendation: enriched?.tradeRecommendation,
@@ -138,165 +111,94 @@ const Dashboard = () => {
             sessionAdvice: enriched?.sessionAdvice,
             fibonacci: enriched?.fibonacci,
             supportResistance: enriched?.supportResistance,
+            newsImpact: enriched?.newsImpact
           };
         });
-
-        setStocks(processedStocks);
-
-        setSelectedStock(prev => {
-          if (!prev && processedStocks.length > 0) {
-            return processedStocks[0];
-          }
-          if (prev) {
-            const updated = processedStocks.find(s => s.symbol === prev.symbol);
-            return updated || prev;
-          }
-          return prev;
-        });
+        setStocks(processed);
+        setSelectedStock(prev => prev ? processed.find(s => s.symbol === prev.symbol) || prev : processed[0]);
       }
 
-      // Fetch top opportunities
+      // Top opportunities
       try {
-        const opportunitiesRes = await tradingAPI.getTopOpportunities(10);
-        if (opportunitiesRes?.data?.success) {
-          setTopOpportunities(opportunitiesRes.data.data);
-        }
-      } catch (oppError) {
-        console.warn('Failed to fetch top opportunities:', oppError);
-      }
+        const opps = await tradingAPI.getTopOpportunities(10);
+        if (opps?.data?.success) setTopOpportunities(opps.data.data);
+      } catch (e) { console.warn('Opportunities failed:', e); }
 
       if (overviewRes.data.success) {
-        setMarketStats({
-          ...overviewRes.data.data,
-          totalStocks: stocksRes.data.data?.length || 0,
-          activeStocks: stocksRes.data.data?.filter(s => s.price).length || 0,
-          session: sessionInfo
-        });
+        setMarketStats({ ...overviewRes.data.data, totalStocks: stocksRes.data.data?.length || 0, activeStocks: stocksRes.data.data?.filter(s => s.price).length || 0, session: sessionInfo });
       }
 
       setIsConnected(true);
-      setLastUpdate(new Date().toLocaleTimeString('en-PK', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      }));
-
+      setLastUpdate(new Date().toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       setRefreshCountdown(300);
-
-      if (isManualRefresh) {
-        toast.success('Data refreshed successfully');
-      }
-
+      if (isManualRefresh) toast.success('Data refreshed');
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      console.error('Fetch failed:', error);
       setIsConnected(false);
-      if (isManualRefresh) {
-        toast.error('Failed to fetch stock data');
-      }
+      if (isManualRefresh) toast.error('Failed to fetch data');
     } finally {
       setLoading(false);
       fetchingRef.current = false;
     }
   }, [sessionInfo]);
 
+  // Countdown timer
   useEffect(() => {
-    const timer = setInterval(() => {
-      setRefreshCountdown(prev => {
-        if (prev <= 1) return 300;
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
+    const t = setInterval(() => setRefreshCountdown(prev => prev <= 1 ? 300 : prev - 1), 1000);
+    return () => clearInterval(t);
   }, []);
 
+  // Initial fetch + interval
   useEffect(() => {
     checkHealth();
     fetchData(false);
-
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
     intervalRef.current = setInterval(() => fetchData(false), 300000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchData, checkHealth]);
 
-  const handleManualRefresh = () => {
-    fetchData(true);
-  };
+  const handleManualRefresh = () => fetchData(true);
+  const handleStockClick = (stock) => { setSelectedStock(stock); setModalOpen(true); };
 
-  const handleStockClick = (stock) => {
-    setSelectedStock(stock);
-    setModalOpen(true);
-  };
+  const formatCountdown = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  const formatCountdown = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const filteredStocks = stocks.filter(stock =>
-    stock.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStocks = stocks.filter(s => s.symbol.toLowerCase().includes(searchTerm.toLowerCase()));
 
   if (loading && stocks.length === 0) {
-    return (
-      <div className="dashboard-loading">
-        <div className="spinner"></div>
-        <p>Loading PSX Data...</p>
-      </div>
-    );
+    return <div className="dashboard-loading"><div className="spinner"></div><p>Loading PSX Data...</p></div>;
   }
 
   return (
     <div className="dashboard">
       <Toaster position="top-right" theme="dark" />
+      <Header lastUpdate={lastUpdate} isConnected={isConnected} onRefresh={handleManualRefresh} marketStats={marketStats} nextRefresh={refreshCountdown} sessionInfo={sessionInfo} topOpportunitiesCount={topOpportunities.length} />
 
-      <Header
-        lastUpdate={lastUpdate}
-        isConnected={isConnected}
-        onRefresh={handleManualRefresh}
-        marketStats={marketStats}
-        nextRefresh={refreshCountdown}
-        sessionInfo={sessionInfo}
-        topOpportunitiesCount={topOpportunities.length}
-      />
-
-      {/* New Components Row */}
       <div className="dashboard-top-row">
         <SessionIndicator />
         <MarketBreadth />
       </div>
 
-      {/* Top Opportunities */}
-      <TopOpportunities 
-        onSelectStock={handleStockClick} 
-        limit={5} 
-      />
+      {/* News Bar */}
+      {generalNews.length > 0 && (
+        <div className="news-bar">
+          <span className="news-bar-title">📰 Market News</span>
+          <div className="news-bar-scroll">
+            {generalNews.map((n, i) => (
+              <span key={i} className={`news-chip ${n.sentiment?.toLowerCase()}`}>
+                {n.headline} ({n.sentiment})
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <TopOpportunities onSelectStock={handleStockClick} limit={5} />
 
       <div className="view-toggle">
         <div className="view-toggle-left">
-          <button
-            className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
-            onClick={() => setViewMode('cards')}
-          >
-            📇 Cards
-          </button>
-          <button
-            className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
-            onClick={() => setViewMode('table')}
-          >
-            📊 Table
-          </button>
+          <button className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`} onClick={() => setViewMode('cards')}>📇 Cards</button>
+          <button className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`} onClick={() => setViewMode('table')}>📊 Table</button>
         </div>
-        <span className="countdown-timer">
-          ⏱️ Next refresh: {formatCountdown(refreshCountdown)}
-        </span>
+        <span className="countdown-timer">⏱️ Next refresh: {formatCountdown(refreshCountdown)}</span>
       </div>
 
       <div className="dashboard-content">
@@ -304,91 +206,34 @@ const Dashboard = () => {
           <>
             <div className="dashboard-left">
               <div className="search-bar">
-                <input
-                  type="text"
-                  placeholder="Search symbol... (e.g., FFC, OGDC)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
+                <input type="text" placeholder="Search symbol... (e.g., FFC, OGDC)" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="search-input" />
                 <span className="search-icon">🔍</span>
               </div>
-
               <div className="stocks-grid">
-                {filteredStocks.length === 0 ? (
-                  <div className="no-results">
-                    <p>No stocks found</p>
-                  </div>
-                ) : (
+                {filteredStocks.length === 0 ? <div className="no-results"><p>No stocks found</p></div> :
                   filteredStocks.map(stock => (
-                    <StockCard
-                      key={stock.symbol}
-                      stock={stock}
-                      onClick={() => handleStockClick(stock)}
-                      onAnalyze={() => handleStockClick(stock)}
-                      loading={false}
-                    />
+                    <StockCard key={stock.symbol} stock={stock} onClick={() => handleStockClick(stock)} onAnalyze={() => handleStockClick(stock)} loading={false} />
                   ))
-                )}
+                }
               </div>
             </div>
             <div className="dashboard-right">
-              {selectedStock && (
-                <Chart
-                  candles={selectedStock.candles || []}
-                  candles15Min={selectedStock.candles15Min || []}
-                  symbol={selectedStock.symbol}
-                  trend15Min={{
-                    trend: selectedStock.trend15Min,
-                    strength: selectedStock.trendStrength15Min,
-                    reason: selectedStock.trendReason15Min
-                  }}
-                  confidence={selectedStock.confidence}
-                  riskLevels={selectedStock.riskLevels}
-                />
-              )}
+              {selectedStock && <Chart candles={selectedStock.candles || []} candles15Min={selectedStock.candles15Min || []} symbol={selectedStock.symbol} trend15Min={{ trend: selectedStock.trend15Min, strength: selectedStock.trendStrength15Min, reason: selectedStock.trendReason15Min }} confidence={selectedStock.confidence} riskLevels={selectedStock.riskLevels} />}
             </div>
           </>
         ) : (
           <div className="dashboard-full">
             <div className="search-bar table-search">
-              <input
-                type="text"
-                placeholder="Search symbol... (e.g., FFC, OGDC)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
+              <input type="text" placeholder="Search symbol..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="search-input" />
               <span className="search-icon">🔍</span>
             </div>
-            <IndicatorsTable
-              stocks={filteredStocks}
-              onSelectStock={(stock) => {
-                setSelectedStock(stock);
-                setViewMode('cards');
-              }}
-            />
-            {selectedStock && (
-              <div className="table-chart">
-                <Chart 
-                  candles={selectedStock.candles} 
-                  symbol={selectedStock.symbol}
-                  confidence={selectedStock.confidence}
-                />
-              </div>
-            )}
+            <IndicatorsTable stocks={filteredStocks} onSelectStock={(stock) => { setSelectedStock(stock); setViewMode('cards'); }} />
+            {selectedStock && <div className="table-chart"><Chart candles={selectedStock.candles} symbol={selectedStock.symbol} confidence={selectedStock.confidence} /></div>}
           </div>
         )}
       </div>
 
-      {/* Stock Detail Modal - Replaces AnalysisModal */}
-      <StockDetailModal
-        stock={selectedStock}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedStock(null);
-        }}
-      />
+      <StockDetailModal stock={selectedStock} onClose={() => { setModalOpen(false); setSelectedStock(null); }} />
     </div>
   );
 };

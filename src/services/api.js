@@ -81,6 +81,9 @@ export const psxAPI = {
 export const tradingAPI = {
   // Get enriched stocks with confidence scores, risk levels, session analysis
   getEnrichedStocks: () => api.get('/psx/enriched-stocks'),
+
+  getGeneralNews: () => api.get('/api/psx/news'),
+getStockNews: (symbol) => api.get(`/api/psx/news/${symbol}`),
   
   // Get top trading opportunities based on confidence
   getTopOpportunities: (limit = 10) => api.get(`/psx/top-opportunities?limit=${limit}`),
