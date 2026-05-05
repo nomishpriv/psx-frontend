@@ -397,3 +397,103 @@
   background: #2a2a3e;
   border-radius: 3px;
 }
+
+.modal-news { padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-top: 12px; }
+.news-grid { display: flex; flex-direction: column; gap: 8px; }
+.news-reason { color: #94a3b8; font-size: 12px; }
+.news-headlines { margin-top: 8px; }
+.news-headline { font-size: 11px; color: #94a3b8; padding: 2px 0; }
+
+.volume-analysis-section {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.volume-analysis-section h3 { margin: 0 0 8px 0; font-size: 14px; }
+
+.volume-analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.va-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.va-item span { color: #94a3b8; }
+.va-item strong { font-size: 13px; }
+
+.va-item.full-width { grid-column: span 2; }
+
+.va-reason {
+  grid-column: span 2;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.va-STRONG_CONFIRM, .va-CONFIRMED { color: #22c55e; }
+.va-WEAK, .va-FAKE_MOVE { color: #ef4444; }
+
+/* Entry/Exit Zones */
+.entry-zone-section {
+  background: rgba(34, 197, 94, 0.05);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.entry-zone-section h3 { margin: 0 0 8px 0; font-size: 14px; }
+
+.entry-zone-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.ez-item {
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.ez-item.support { background: rgba(34, 197, 94, 0.1); }
+.ez-item.current { background: rgba(59, 130, 246, 0.1); }
+.ez-item.resistance { background: rgba(239, 68, 68, 0.1); }
+
+.ez-item span { display: block; color: #94a3b8; margin-bottom: 4px; }
+.ez-item strong { display: block; font-size: 16px; margin-bottom: 2px; }
+.ez-item small { color: #64748b; }
+
+/* Market Consensus */
+.consensus-section {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.consensus-section h4 { margin: 0 0 6px 0; font-size: 13px; }
+
+.consensus-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.consensus-badge.bullish { color: #22c55e; background: rgba(34,197,94,0.1); }
+.consensus-badge.bearish { color: #ef4444; background: rgba(239,68,68,0.1); }
+.consensus-badge.mixed { color: #f59e0b; background: rgba(245,158,11,0.1); }
+
+.consensus-advice { font-size: 11px; color: #94a3b8; margin-top: 4px; }

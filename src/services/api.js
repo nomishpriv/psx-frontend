@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'http://localhost:5000/api';
-const API_BASE_URL = 'https://darkgreen-beaver-138407.hostingersite.com';
+const API_BASE_URL = 'http://localhost:5000/api';
+// const API_BASE_URL = 'https://darkgreen-beaver-138407.hostingersite.com';
 // const API_BASE_URL = 'https://operators-cell-asbestos-upgrades.trycloudflare.com/api';
 
 // Create axios instance with longer timeout for 43 symbols
@@ -61,6 +61,8 @@ const withRetry = async (apiCall, retries = 2) => {
   }
 };
 
+
+
 // ============ PSX Intraday API (Existing) ============
 export const psxAPI = {
   // Get all stocks with intraday data
@@ -79,11 +81,21 @@ export const psxAPI = {
 // ============ NEW PREDICTABLE TRADING API ============
 
 export const tradingAPI = {
+  
   // Get enriched stocks with confidence scores, risk levels, session analysis
   getEnrichedStocks: () => api.get('/psx/enriched-stocks'),
 
-  getGeneralNews: () => api.get('/api/psx/news'),
-getStockNews: (symbol) => api.get(`/api/psx/news/${symbol}`),
+  getStockAnalysis: (symbol) => api.get('/psx/analysis/' + symbol),
+
+  getKSE100Volume: () => api.get('/psx/kse100/volume'),
+
+  getStockVolume: (symbol) => api.get('/psx/volume/stock/' + symbol),
+getMarketVolume: () => api.get('/psx/volume/market'),
+
+  getGeopolitical: () => api.get('/psx/geopolitical'),
+
+getStockNews: (symbol) => api.get('/psx/news/' + symbol),
+getMarketNews: () => api.get('/psx/news'),
   
   // Get top trading opportunities based on confidence
   getTopOpportunities: (limit = 10) => api.get(`/psx/top-opportunities?limit=${limit}`),

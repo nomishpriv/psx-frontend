@@ -52,7 +52,6 @@ const Header = ({
 <span className="update-time">
   {nextRefresh ? `${nextRefresh}s` : lastUpdate || '--:--:--'}
 </span></div>
-
         <button className="refresh-btn" onClick={onRefresh}>
           <span className="refresh-icon">↻</span>
           Refresh

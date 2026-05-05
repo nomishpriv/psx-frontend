@@ -530,3 +530,146 @@
 .news-chip.positive { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
 .news-chip.negative { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .news-chip.neutral { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+
+.market-news-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin: 10px 0;
+  overflow-x: auto;
+}
+
+.news-sentiment {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.news-summary {
+  color: #94a3b8;
+  font-size: 13px;
+  flex: 1;
+}
+
+.news-advice {
+  font-size: 12px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.geo-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.geo-alert.panic {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.geo-alert.optimistic {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.geo-advice {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-left: auto;
+}
+
+.market-news-bar.stable {
+  border-left: 4px solid #22c55e;
+}
+
+.market-news-bar.unstable {
+  border-left: 4px solid #f59e0b;
+  opacity: 0.8;
+}
+
+.unstable-badge {
+  font-size: 11px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.volume-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin: 6px 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.volume-bar.bullish { background: rgba(34,197,94,0.1); border-left: 4px solid #22c55e; color: #22c55e; }
+.volume-bar.bearish { background: rgba(239,68,68,0.1); border-left: 4px solid #ef4444; color: #ef4444; }
+.volume-bar.neutral, .volume-bar.low_activity { background: rgba(234,179,8,0.1); border-left: 4px solid #eab308; color: #eab308; }
+
+.volume-advice { margin-left: auto; font-style: italic; }
+
+.kse-volume-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 14px;
+  background: rgba(30,41,59,0.8);
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  margin: 6px 0;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.geo-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+  font-weight: 500;
+  flex-wrap: wrap;
+}
+
+.geo-alert.critical { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-left: 4px solid #ef4444; }
+.geo-alert.high { background: rgba(239, 68, 68, 0.1); color: #f87171; border-left: 4px solid #f87171; }
+.geo-alert.medium { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-left: 4px solid #fbbf24; }
+.geo-alert.low { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-left: 4px solid #60a5fa; }
+.geo-alert.none { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border-left: 4px solid #94a3b8; }
+
+.geo-summary { flex: 1; min-width: 200px; }
+.geo-action { background: rgba(255,255,255,0.1); padding: 2px 10px; border-radius: 10px; font-size: 11px; }
+.geo-oil { font-size: 11px; opacity: 0.9; }
+
+.loading-dot {
+  animation: spin 1s linear infinite;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

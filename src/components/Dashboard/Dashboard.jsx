@@ -8,6 +8,7 @@ import TopOpportunities from '../TopOpportunities/TopOpportunities';
 import MarketBreadth from '../MarketBreadth/MarketBreadth';
 import SessionIndicator from '../SessionIndicator/SessionIndicator';
 import StockDetailModal from '../StockDetailModal/StockDetailModal';
+import StockLookup from '../StockLookup/StockLookup';
 import { psxAPI, stockAPI, healthAPI, batchAPI, tradingAPI } from '../../services/api';
 import './Dashboard.css';
 
@@ -15,7 +16,7 @@ const Dashboard = () => {
   const [stocks, setStocks] = useState([]);
   const [enrichedStocks, setEnrichedStocks] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [marketStats, setMarketStats] = useState(null);
@@ -27,6 +28,11 @@ const Dashboard = () => {
   const [sessionInfo, setSessionInfo] = useState(null);
   const [topOpportunities, setTopOpportunities] = useState([]);
   const [marketBreadth, setMarketBreadth] = useState(null);
+  const [marketNews, setMarketNews] = useState(null);
+  const [geoData, setGeoData] = useState(null);
+  const [marketVolume, setMarketVolume] = useState(null);
+  const [kseVolume, setKseVolume] = useState(null);
+
 
   const fetchingRef = useRef(false);
   const intervalRef = useRef(null);
@@ -40,163 +46,105 @@ const Dashboard = () => {
     }
   }, []);
 
-  const fetchData = useCallback(async (isManualRefresh = false) => {
-    if (fetchingRef.current) {
-      console.log('⏳ Fetch already in progress, skipping...');
-      return;
-    }
+  const sessionRef = useRef(null);
 
-    fetchingRef.current = true;
+const fetchData = useCallback(async (isManualRefresh = false) => {
+  if (fetchingRef.current) return;
+  fetchingRef.current = true;
 
+  try {
+    if (isManualRefresh) setLoading(true);
+
+    // Fetch enriched data
+    let enrichedResponse = null;
     try {
-      setLoading(true);
-
-      // Fetch enriched data from new endpoint
-      let enrichedResponse = null;
-      try {
-        enrichedResponse = await tradingAPI.getEnrichedStocks();
-        if (enrichedResponse?.data?.success) {
-          setEnrichedStocks(enrichedResponse.data.data);
-          setSessionInfo(enrichedResponse.data.session);
-        }
-      } catch (enrichedError) {
-        console.warn('Enriched API failed, falling back to legacy:', enrichedError);
+      enrichedResponse = await tradingAPI.getEnrichedStocks();
+      if (enrichedResponse?.data?.success) {
+        setEnrichedStocks(enrichedResponse.data.data);
+        sessionRef.current = enrichedResponse.data.session;
+        setSessionInfo(enrichedResponse.data.session);
       }
+    } catch (e) { console.warn('Enriched API failed:', e); }
 
-      // Fetch market breadth
-      try {
-        const breadthResponse = await tradingAPI.scanBullish();
-        if (breadthResponse?.data?.success) {
-          setMarketBreadth(breadthResponse.data);
-        }
-      } catch (breadthError) {
-        console.warn('Failed to fetch market breadth:', breadthError);
-      }
+    // Parallel fetches (news, volume, geo, kse100)
+    try {
+      const [breadthRes, kseRes, volRes, geoRes, newsRes] = await Promise.allSettled([
+        tradingAPI.scanBullish(),
+        tradingAPI.getKSE100Volume(),
+        tradingAPI.getMarketVolume(),
+        tradingAPI.getGeopolitical(),
+        tradingAPI.getMarketNews()
+      ]);
 
-      // Fallback to legacy data if enriched fails
-      const { stocks: stocksRes, overview: overviewRes, companies: companiesRes } =
-        await batchAPI.getAllDataWithFallback();
+      if (breadthRes.value?.data?.success) setMarketBreadth(breadthRes.value.data);
+      if (kseRes.value?.data) setKseVolume(kseRes.value.data);
+      if (volRes.value?.data) setMarketVolume(volRes.value.data);
+      if (geoRes.value?.data?.success) setGeoData(geoRes.value.data);
+      if (newsRes.value?.data?.success) setMarketNews(newsRes.value.data);
+    } catch (e) {}
 
-      if (!stocksRes || !overviewRes || !companiesRes) {
-        throw new Error('Failed to fetch all required data');
-      }
+    // Legacy data
+    const { stocks: stocksRes, overview: overviewRes, companies: companiesRes } = await batchAPI.getAllDataWithFallback();
+    if (!stocksRes || !overviewRes || !companiesRes) throw new Error('Failed to fetch required data');
 
-      // Process company data
-      const companyDataMap = {};
-      if (companiesRes.data.success && companiesRes.data.data) {
-        companiesRes.data.data.forEach(company => {
-          if (company && company.symbol) {
-            companyDataMap[company.symbol] = {
-              equity: company.equity || {},
-              ratios: company.ratios || {},
-              financials: company.financials || { annual: {}, quarterly: {} },
-              payouts: company.payouts || [],
-              stats: company.stats || {},
-              companyName: company.companyName,
-              sector: company.sector,
-            };
-          }
-        });
-      }
-      setCompanyData(companyDataMap);
-
-      // Process OHLC data
-      const correctOHLCMap = {};
-      if (companiesRes.data.success && companiesRes.data.data) {
-        companiesRes.data.data.forEach(company => {
-          if (company && company.symbol && company.ohlc) {
-            correctOHLCMap[company.symbol] = {
-              open: company.ohlc.open || company.price,
-              high: company.ohlc.high || company.price,
-              low: company.ohlc.low || company.price,
-              close: company.ohlc.close || company.price,
-              dayVolume: company.ohlc.volume || 0,
-            };
-          }
-        });
-      }
-
-      // Merge enriched data with legacy data if available
-      let processedStocks = [];
-      if (stocksRes.data.success) {
-        processedStocks = stocksRes.data.data.map(stock => {
-          const enriched = enrichedResponse?.data?.data?.find(e => e.symbol === stock.symbol);
-          const correctOHLC = correctOHLCMap[stock.symbol];
-          
-          return {
-            ...stock,
-            ...enriched,
-            open: correctOHLC?.open ?? stock.open ?? stock.price,
-            high: correctOHLC?.high ?? stock.high ?? stock.price,
-            low: correctOHLC?.low ?? stock.low ?? stock.price,
-            close: correctOHLC?.close ?? stock.close ?? stock.price,
-            dayVolume: correctOHLC?.dayVolume ?? stock.volume,
-            confidence: enriched?.confidence,
-            riskLevels: enriched?.riskLevels,
-            tradeRecommendation: enriched?.tradeRecommendation,
-            currentSession: enriched?.currentSession,
-            sessionAdvice: enriched?.sessionAdvice,
-            fibonacci: enriched?.fibonacci,
-            supportResistance: enriched?.supportResistance,
-          };
-        });
-
-        setStocks(processedStocks);
-
-        setSelectedStock(prev => {
-          if (!prev && processedStocks.length > 0) {
-            return processedStocks[0];
-          }
-          if (prev) {
-            const updated = processedStocks.find(s => s.symbol === prev.symbol);
-            return updated || prev;
-          }
-          return prev;
-        });
-      }
-
-      // Fetch top opportunities
-      try {
-        const opportunitiesRes = await tradingAPI.getTopOpportunities(10);
-        if (opportunitiesRes?.data?.success) {
-          setTopOpportunities(opportunitiesRes.data.data);
-        }
-      } catch (oppError) {
-        console.warn('Failed to fetch top opportunities:', oppError);
-      }
-
-      if (overviewRes.data.success) {
-        setMarketStats({
-          ...overviewRes.data.data,
-          totalStocks: stocksRes.data.data?.length || 0,
-          activeStocks: stocksRes.data.data?.filter(s => s.price).length || 0,
-          session: sessionInfo
-        });
-      }
-
-      setIsConnected(true);
-      setLastUpdate(new Date().toLocaleTimeString('en-PK', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      }));
-
-      setRefreshCountdown(300);
-
-      if (isManualRefresh) {
-        toast.success('Data refreshed successfully');
-      }
-
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-      setIsConnected(false);
-      if (isManualRefresh) {
-        toast.error('Failed to fetch stock data');
-      }
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
+    // Company data
+    const companyDataMap = {};
+    if (companiesRes.data.success && companiesRes.data.data) {
+      companiesRes.data.data.forEach(c => {
+        if (c?.symbol) companyDataMap[c.symbol] = { equity: c.equity || {}, ratios: c.ratios || {}, financials: c.financials || {}, payouts: c.payouts || [], stats: c.stats || {}, companyName: c.companyName, sector: c.sector };
+      });
     }
-  }, [sessionInfo]);
+    setCompanyData(companyDataMap);
 
+    // OHLC map
+    const ohlcMap = {};
+    if (companiesRes.data.success && companiesRes.data.data) {
+      companiesRes.data.data.forEach(c => {
+        if (c?.symbol && c.ohlc) ohlcMap[c.symbol] = { open: c.ohlc.open, high: c.ohlc.high, low: c.ohlc.low, close: c.ohlc.close, dayVolume: c.ohlc.volume || 0 };
+      });
+    }
+
+    // Merge stocks
+    let processed = [];
+    if (stocksRes.data.success) {
+      processed = stocksRes.data.data.map(stock => {
+        const enriched = enrichedResponse?.data?.data?.find(e => e.symbol === stock.symbol);
+        const ohlc = ohlcMap[stock.symbol];
+        return {
+          ...stock, ...enriched,
+          open: ohlc?.open ?? stock.price, high: ohlc?.high ?? stock.price,
+          low: ohlc?.low ?? stock.price, close: ohlc?.close ?? stock.price,
+          dayVolume: ohlc?.dayVolume ?? stock.volume,
+        };
+      });
+      setStocks(processed);
+      setSelectedStock(prev => prev ? processed.find(s => s.symbol === prev.symbol) || prev : processed[0]);
+    }
+
+    // Top opportunities
+    try {
+      const oppRes = await tradingAPI.getTopOpportunities(10);
+      if (oppRes?.data?.success) setTopOpportunities(oppRes.data.data);
+    } catch (e) {}
+
+    if (overviewRes.data.success) {
+      setMarketStats({ ...overviewRes.data.data, totalStocks: processed.length, activeStocks: processed.filter(s => s.price).length, session: sessionRef.current });
+    }
+
+    setIsConnected(true);
+    setLastUpdate(new Date().toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    setRefreshCountdown(300);
+
+    if (isManualRefresh) toast.success('Data refreshed');
+  } catch (error) {
+    console.error('Fetch failed:', error);
+    setIsConnected(false);
+    if (isManualRefresh) toast.error('Failed to fetch data');
+  } finally {
+    setLoading(false);
+    fetchingRef.current = false;
+  }
+}, []);
   useEffect(() => {
     const timer = setInterval(() => {
       setRefreshCountdown(prev => {
@@ -208,31 +156,31 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    checkHealth();
-    fetchData(false);
+useEffect(() => {
+  checkHealth();
+  fetchData(false);
 
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+  if (intervalRef.current) clearInterval(intervalRef.current);
+  intervalRef.current = setInterval(() => {
+    if (!fetchingRef.current) fetchData(false);
+  }, 300000);
 
-    intervalRef.current = setInterval(() => fetchData(false), 300000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [fetchData, checkHealth]);
+  return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+}, []);
 
   const handleManualRefresh = () => {
     fetchData(true);
   };
 
-  const handleStockClick = (stock) => {
+ const handleStockClick = (stock) => {
+  if (!stock?.candles && stock?.symbol) {
+    const fullStock = stocks.find(s => s.symbol === stock.symbol);
+    setSelectedStock(fullStock || stock);
+  } else {
     setSelectedStock(stock);
-    setModalOpen(true);
-  };
+  }
+  setModalOpen(true);
+};
 
   const formatCountdown = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -244,34 +192,93 @@ const Dashboard = () => {
     stock.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading && stocks.length === 0) {
-    return (
-      <div className="dashboard-loading">
-        <div className="spinner"></div>
-        <p>Loading PSX Data...</p>
-      </div>
-    );
-  }
+  // REMOVE this block:
+// if (loading && stocks.length === 0) {
+//   return (
+//     <div className="dashboard-loading">
+//       <div className="spinner"></div>
+//       <p>Loading PSX Data...</p>
+//     </div>
+//   );
+// }
 
+// KEEP the normal return always (it handles empty states)
   return (
     <div className="dashboard">
       <Toaster position="top-right" theme="dark" />
 
       <Header
-        lastUpdate={lastUpdate}
-        isConnected={isConnected}
-        onRefresh={handleManualRefresh}
-        marketStats={marketStats}
-        nextRefresh={refreshCountdown}
-        sessionInfo={sessionInfo}
-        topOpportunitiesCount={topOpportunities.length}
-      />
+  lastUpdate={lastUpdate}
+  isConnected={isConnected}
+  onRefresh={handleManualRefresh}
+  marketStats={marketStats}
+  nextRefresh={refreshCountdown}
+  sessionInfo={sessionInfo}
+  topOpportunitiesCount={topOpportunities.length}
+/>
 
       {/* New Components Row */}
       <div className="dashboard-top-row">
         <SessionIndicator />
         <MarketBreadth />
       </div>
+
+      {marketVolume && (
+  <div className={`volume-bar ${marketVolume.marketVolumeSentiment?.toLowerCase()}`}>
+    <span>📊 Volume Breadth: {marketVolume.volumeBreadth}%</span>
+    <span>{marketVolume.highVolumeStocks} stocks on high volume</span>
+    <span className="volume-advice">{marketVolume.advice}</span>
+  </div>
+)}
+
+{kseVolume?.signal && (
+  <div className="kse-volume-bar" style={{ borderLeftColor: kseVolume.signal.color }}>
+    <span>📊 KSE-100 Volume: <strong>{kseVolume.currentRatio}%</strong> of avg</span>
+    <span>Trend: {kseVolume.volumeTrend}</span>
+    <span style={{ color: kseVolume.signal.color }}>{kseVolume.signal.message}</span>
+    {kseVolume.estimatedCompletion && (
+      <span>⏱️ 100% est: {kseVolume.estimatedCompletion}</span>
+    )}
+    {kseVolume.timePatterns?.peakBucket && (
+      <span>🔺 Peak: {kseVolume.timePatterns.peakBucket} (avg {kseVolume.timePatterns.peakVolume?.toLocaleString()})</span>
+    )}
+  </div>
+)}
+
+ {geoData?.aiAnalysis && (
+  <div className={`geo-alert ${geoData.aiAnalysis.alertLevel?.toLowerCase()}`}>
+    <span>
+      🌍 Geo: {geoData.aiAnalysis.marketDirection} | Impact: {geoData.aiAnalysis.impactScore > 0 ? '+' : ''}{geoData.aiAnalysis.impactScore}
+    </span>
+    <span className="geo-summary">{geoData.aiAnalysis.summary}</span>
+    {geoData.aiAnalysis.action && (
+      <span className="geo-action">{geoData.aiAnalysis.action}</span>
+    )}
+    {geoData.oilData?.wti && (
+      <span className="geo-oil">
+        🛢️ WTI: ${geoData.oilData.wti.price} | Brent: ${geoData.oilData.brent?.price}
+      </span>
+    )}
+  </div>
+)}
+
+{marketNews?.consensus && (
+  <div className={`market-news-bar ${marketNews.consensus.stable ? 'stable' : 'unstable'}`}>
+    <span className="news-sentiment" style={{ 
+      color: marketNews.consensus.consensus === 'BULLISH' ? '#22c55e' : 
+             marketNews.consensus.consensus === 'BEARISH' ? '#ef4444' : '#f59e0b'
+    }}>
+      📊 Market: {marketNews.consensus.consensus} 
+      ({marketNews.consensus.agreement}% agreement)
+    </span>
+    <span className="news-advice">
+      {marketNews.consensus.advice}
+    </span>
+    {!marketNews.consensus.stable && (
+      <span className="unstable-badge">⚠️ Mixed signals — wait for confirmation</span>
+    )}
+  </div>
+)}
 
       {/* Top Opportunities */}
       <TopOpportunities 
@@ -280,24 +287,17 @@ const Dashboard = () => {
       />
 
       <div className="view-toggle">
-        <div className="view-toggle-left">
-          <button
-            className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
-            onClick={() => setViewMode('cards')}
-          >
-            📇 Cards
-          </button>
-          <button
-            className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
-            onClick={() => setViewMode('table')}
-          >
-            📊 Table
-          </button>
-        </div>
-        <span className="countdown-timer">
-          ⏱️ Next refresh: {formatCountdown(refreshCountdown)}
-        </span>
-      </div>
+  <div className="view-toggle-left">
+    <button className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`} onClick={() => setViewMode('cards')}>📇 Cards</button>
+    <button className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`} onClick={() => setViewMode('table')}>📊 Table</button>
+    {loading && <span className="loading-dot">🔄</span>}
+  </div>
+  <span className="countdown-timer">
+    ⏱️ Next refresh: {formatCountdown(refreshCountdown)}
+  </span>
+</div>
+
+      <StockLookup />
 
       <div className="dashboard-content">
         {viewMode === 'cards' ? (
